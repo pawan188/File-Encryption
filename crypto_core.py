@@ -25,7 +25,7 @@ def encrypt_bytes(data: bytes, password: str) -> tuple[bytes, bytes, bytes]:
     ciphertext = aesgcm.encrypt(nonce, data, None)
     return salt, nonce, ciphertext
 
-def decrypt_bytes(data: bytes, password: str, salt: bytes, nonce: bytes) -> bytes:
+def decrypt_bytes(ciphertext: bytes, password: str, salt: bytes, nonce: bytes) -> bytes:
     key = derive_key(password, salt)
     aesgcm = AESGCM(key)
-    return aesgcm.decrypt(nonce, data, None)
+    return aesgcm.decrypt(nonce, ciphertext, None)

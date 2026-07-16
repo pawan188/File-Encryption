@@ -13,7 +13,12 @@ __pycache__/
 .idea/
 
 # Generated encrypted/decrypted files
-output/
+Encrypted_Files/
+Decrypted_Files/
+
+#Sample Files/Output files
+Sample_Files/
+Outputs/
 
 # OS files
 .DS_Store

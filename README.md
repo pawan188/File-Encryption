@@ -1,54 +1,162 @@
-# File Vault
+# Vault
 
-A Python-based file encryption tool built using modern cryptographic practices. This project is being developed to understand password-based encryption, authenticated encryption, and secure software design.
+A secure command-line file encryption and decryption tool written in Python using **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
+
+---
 
 ## Features
 
 - AES-256-GCM authenticated encryption
 - Password-based key derivation using Scrypt
-- Random salt generated for every encryption
-- Random nonce generated for every encryption
-- Modular cryptographic core
+- Random 16-byte salt and 12-byte nonce generated for every encryption
+- Secure password input using `getpass`
+- Password confirmation before encryption
+- Command-line interface built with `argparse`
+- Overwrite protection using `--overwrite`
+- Optional deletion of the original file using `--delete-original`
+- Graceful error handling for:
+  - Missing files
+  - Invalid `.enc` files
+  - Incorrect passwords
+  - Corrupted encrypted files
+
+---
 
 ## Project Structure
 
-```
-file-vault/
+```text
+vault/
 │
-├── crypto_core.py
-├── vault.py
-├── tests/
-├── README.md
+├── crypto_core.py          # Cryptographic operations
+├── vault.py                # Command-line interface
+├── Encrypted_Files/        # Encrypted output files
+├── Decrypted_Files/        # Decrypted output files
+├── tests/                  # Pytest unit tests (Yet to implement)
 ├── requirements.txt
-└── .gitignore
+└── README.md
 ```
 
-## Technologies
+---
 
-- Python 3
-- cryptography
-- pytest (coming soon)
+## Installation
 
-## Current Progress
+Clone the repository and install the dependencies.
 
-- [x] Scrypt key derivation
-- [x] AES-256-GCM encryption
-- [x] AES-256-GCM decryption
-- [ ] Command-line interface
-- [ ] File encryption & decryption
-- [ ] Unit tests
-- [ ] Streaming encryption
-- [ ] Documentation
+```bash
+git clone <repository-url>
+cd "File Encryption"
 
-## Learning Objectives
+python -m venv .venv
+```
 
-This project focuses on understanding:
+Activate the virtual environment.
 
-- Password-based key derivation
-- Authenticated encryption (AEAD)
-- Secure cryptographic design
-- Python CLI application development
+**Windows**
 
-## Disclaimer
+```bash
+.venv\Scripts\activate
+```
 
-This project is intended for educational purposes. While it uses the `cryptography` library and follows modern cryptographic practices, it has not been independently audited and should not be used to protect highly sensitive or production data.
+**Linux/macOS**
+
+```bash
+source .venv/bin/activate
+```
+
+Install the required packages.
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+### Encrypt a file
+
+```bash
+python vault.py encrypt Sample_Files/example.pdf
+```
+
+Encrypted output:
+
+```text
+Encrypted_Files/example.pdf.enc
+```
+
+---
+
+### Decrypt a file
+
+```bash
+python vault.py decrypt Encrypted_Files/example.pdf.enc
+```
+
+Decrypted output:
+
+```text
+Decrypted_Files/example.pdf
+```
+
+---
+
+### Overwrite an existing output file
+
+```bash
+python vault.py encrypt Sample_Files/example.pdf --overwrite
+```
+
+---
+
+### Delete the original file after success
+
+```bash
+python vault.py encrypt Sample_Files/example.pdf --delete-original
+```
+
+Both flags can be combined:
+
+```bash
+python vault.py encrypt Sample_Files/example.pdf --overwrite --delete-original
+```
+
+---
+
+## Encrypted File Format
+
+```
+[ Salt (16 bytes) ][ Nonce (12 bytes) ][ Ciphertext + Authentication Tag ]
+```
+
+---
+
+## Security Notes
+
+- Every encryption operation uses a fresh random salt and nonce.
+- AES-GCM provides both confidentiality and integrity.
+- Scrypt protects against brute-force attacks by making key derivation computationally expensive.
+- Passwords are never stored.
+- Incorrect passwords and tampered files produce the same authentication failure.
+
+---
+
+## Current Limitations
+
+- Files are currently loaded entirely into memory before encryption/decryption.
+- Password recovery is not possible.
+- Streaming encryption for very large files is not yet implemented.
+
+---
+
+## Future Improvements
+
+- Streaming encryption using the lower-level `Cipher` API
+- Configurable output directory
+- Progress indicator for large files
+
+---
+
+## License
+
+This project is intended for educational and learning purposes.
