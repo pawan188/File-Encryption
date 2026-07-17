@@ -1,6 +1,8 @@
-# Vault
+# Vault 
 
-A secure command-line file encryption and decryption tool written in Python using **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
+A secure command-line file encryption tool built in Python using **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
+
+Vault encrypts and decrypts files while ensuring both confidentiality and integrity. Every encrypted file is protected with a unique salt and nonce, making each encryption operation cryptographically secure.
 
 ---
 
@@ -8,30 +10,31 @@ A secure command-line file encryption and decryption tool written in Python usin
 
 - AES-256-GCM authenticated encryption
 - Password-based key derivation using Scrypt
-- Random 16-byte salt and 12-byte nonce generated for every encryption
+- Random salt generated for every encrypted file
+- Random nonce generated for every encryption
 - Secure password input using `getpass`
 - Password confirmation before encryption
-- Command-line interface built with `argparse`
-- Overwrite protection using `--overwrite`
-- Optional deletion of the original file using `--delete-original`
-- Graceful error handling for:
-  - Missing files
-  - Invalid `.enc` files
-  - Incorrect passwords
-  - Corrupted encrypted files
+- Detects incorrect passwords
+- Detects tampered or corrupted encrypted files
+- Overwrite protection
+- Option to delete the original file after encryption/decryption
+- Comprehensive unit tests using pytest
 
 ---
 
 ## Project Structure
 
-```text
-vault/
+```
+Vault/
 │
-├── crypto_core.py          # Cryptographic operations
-├── vault.py                # Command-line interface
-├── Encrypted_Files/        # Encrypted output files
-├── Decrypted_Files/        # Decrypted output files
-├── tests/                  # Pytest unit tests (Yet to implement)
+├── Encrypted_Files/
+├── Decrypted_Files/
+├── Sample_Files/
+├── tests/
+│   └── test_crypto.py
+│
+├── crypto_core.py
+├── vault.py
 ├── requirements.txt
 └── README.md
 ```
@@ -40,30 +43,34 @@ vault/
 
 ## Installation
 
-Clone the repository and install the dependencies.
+Clone the repository:
 
 ```bash
 git clone <repository-url>
-cd "File Encryption"
+cd Vault
+```
 
+Create a virtual environment:
+
+```bash
 python -m venv .venv
 ```
 
-Activate the virtual environment.
+Activate it.
 
-**Windows**
+### Windows
 
 ```bash
 .venv\Scripts\activate
 ```
 
-**Linux/macOS**
+### Linux/macOS
 
 ```bash
 source .venv/bin/activate
 ```
 
-Install the required packages.
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -79,84 +86,97 @@ pip install -r requirements.txt
 python vault.py encrypt Sample_Files/example.pdf
 ```
 
-Encrypted output:
-
-```text
-Encrypted_Files/example.pdf.enc
-```
-
----
-
 ### Decrypt a file
 
 ```bash
 python vault.py decrypt Encrypted_Files/example.pdf.enc
 ```
 
-Decrypted output:
-
-```text
-Decrypted_Files/example.pdf
-```
-
----
-
-### Overwrite an existing output file
+### Overwrite existing output
 
 ```bash
-python vault.py encrypt Sample_Files/example.pdf --overwrite
+python vault.py encrypt file.txt --overwrite
 ```
 
----
-
-### Delete the original file after success
+### Delete original file after successful encryption
 
 ```bash
-python vault.py encrypt Sample_Files/example.pdf --delete-original
+python vault.py encrypt file.txt --delete-original
 ```
 
-Both flags can be combined:
+---
+
+## Encryption Process
+
+For every encryption:
+
+1. A random 16-byte salt is generated.
+2. A 256-bit encryption key is derived from the user's password using Scrypt.
+3. A random 12-byte nonce is generated.
+4. AES-256-GCM encrypts the file.
+5. The encrypted file stores:
+
+```
++----------------+----------------+---------------------------+
+| Salt (16 B)    | Nonce (12 B)   | Ciphertext + Auth Tag     |
++----------------+----------------+---------------------------+
+```
+
+The authentication tag is produced automatically by AES-GCM and is stored with the ciphertext.
+
+---
+
+## Security Features
+
+- Unique encryption key for every password/salt combination
+- Random nonce for every encryption
+- Authenticated encryption prevents undetected tampering
+- Wrong passwords are rejected
+- Corrupted or modified encrypted files are rejected
+- Passwords are never stored
+
+---
+
+## Testing
+
+Run the complete test suite:
 
 ```bash
-python vault.py encrypt Sample_Files/example.pdf --overwrite --delete-original
+python -m pytest -v
 ```
+
+Current tests include:
+
+- Round-trip encryption and decryption
+- Wrong password detection
+- Tampered ciphertext detection
+- Empty plaintext
+- Round-trip encryption and decryption with random binary data
 
 ---
 
-## Encrypted File Format
+## Technologies Used
 
-```
-[ Salt (16 bytes) ][ Nonce (12 bytes) ][ Ciphertext + Authentication Tag ]
-```
-
----
-
-## Security Notes
-
-- Every encryption operation uses a fresh random salt and nonce.
-- AES-GCM provides both confidentiality and integrity.
-- Scrypt protects against brute-force attacks by making key derivation computationally expensive.
-- Passwords are never stored.
-- Incorrect passwords and tampered files produce the same authentication failure.
-
----
-
-## Current Limitations
-
-- Files are currently loaded entirely into memory before encryption/decryption.
-- Password recovery is not possible.
-- Streaming encryption for very large files is not yet implemented.
+- Python 3
+- cryptography
+- argparse
+- getpass
+- pytest
 
 ---
 
 ## Future Improvements
 
-- Streaming encryption using the lower-level `Cipher` API
+- GitHub Actions (CI)
+- Code formatting with Black
+- Linting using Ruff
+- Streaming encryption for large files
+- Progress indicator
 - Configurable output directory
-- Progress indicator for large files
+- Package distribution via PyPI
 
 ---
 
 ## License
 
-This project is intended for educational and learning purposes.
+This project is intended for educational purposes and cybersecurity learning.

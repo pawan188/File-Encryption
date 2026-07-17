@@ -13,12 +13,19 @@ __pycache__/
 .idea/
 
 # Generated encrypted/decrypted files
-Encrypted_Files/
-Decrypted_Files/
+Encrypted_Files/*
+Decrypted_Files/*
+Sample_Files/*
+Outputs/*
+
+# Keep the folders in Git
+!Encrypted_Files/.gitkeep
+!Decrypted_Files/.gitkeep
+!Sample_Files/.gitkeep
+
 
 #Sample Files/Output files
-Sample_Files/
-Outputs/
+
 
 # OS files
 .DS_Store
