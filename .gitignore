@@ -23,10 +23,6 @@ Outputs/*
 !Decrypted_Files/.gitkeep
 !Sample_Files/.gitkeep
 
-
-#Sample Files/Output files
-
-
 # OS files
 .DS_Store
 Thumbs.db
