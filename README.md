@@ -290,14 +290,6 @@ Potential improvements include:
 - More extensive test coverage
 - Support for additional platforms
 
-## License
 
-This project can be distributed under the license specified in the repository.
 
-If the repository uses the MIT License, see the `LICENSE` file for the complete license text.
 
-## Author
-
-**Pawan Manigandan**
-
-Mechanical Engineering undergraduate interested in software engineering, cybersecurity, computational engineering, photography, and filmmaking.
