@@ -26,3 +26,8 @@ Outputs/*
 # OS files
 .DS_Store
 Thumbs.db
+
+# PyInstaller
+build/
+dist/
+*.spec

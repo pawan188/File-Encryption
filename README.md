@@ -1,77 +1,75 @@
-// ...existing code...
-# Vault
+# Vault — Secure File Encryption
 
-A secure file encryption tool built in Python using **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
+Vault is a Python-based file encryption tool that provides both a command-line interface (CLI) and a graphical user interface (GUI) for securely encrypting and decrypting files.
 
-Vault encrypts and decrypts files while ensuring both confidentiality and integrity. Every encrypted file is protected with a unique salt and nonce, making each encryption operation cryptographically secure. This project now provides both a CLI and a simple GUI (tkinter).
-
----
+It uses **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
 
 ## Features
 
 - AES-256-GCM authenticated encryption
-- Password-based key derivation using Scrypt
+- Scrypt password-based key derivation
 - Random salt generated for every encrypted file
-- Random nonce generated for every encryption
-- Secure password input using `getpass` (CLI) and masked entry with confirmation (GUI)
-- Password confirmation enforced in GUI before encryption
-- Detects incorrect passwords
-- Detects tampered or corrupted encrypted files
+- Random nonce generated for every encryption operation
+- Password confirmation during encryption
+- Secure file authentication and tamper detection
+- CLI and Tkinter GUI
 - Overwrite protection
-- Option to delete the original file after encryption/decryption
-- Unit tests using pytest
+- Optional deletion of the original file
+- Separate encrypted and decrypted output directories
+- Automated tests using Pytest
+- Standalone Windows executable using PyInstaller
 
----
+## How It Works
+
+For every encryption operation:
+
+1. A random 16-byte salt is generated.
+2. Scrypt derives a 256-bit AES key from the password and salt.
+3. A random 12-byte nonce is generated.
+4. AES-256-GCM encrypts the file.
+5. The salt, nonce, ciphertext, and authentication tag are written to the encrypted file.
+
+The encrypted file format is:
+
+```text
+[ Salt (16 bytes) ][ Nonce (12 bytes) ][ Ciphertext + Authentication Tag ]
+```
+
+Because AES-GCM provides authentication, modifying the encrypted file causes decryption to fail.
 
 ## Project Structure
 
-```
+```text
 Vault/
-│
+├── crypto_core.py
+├── file_operations.py
+├── vault.py
+├── gui.py
+├── tests/
+│   └── test_crypto.py
 ├── Encrypted_Files/
 ├── Decrypted_Files/
 ├── Sample_Files/
-├── tests/
-│   └── test_crypto.py
-│
-├── crypto_core.py
-├── file_operations.py
-├── vault.py        # CLI entrypoint
-├── gui.py          # Simple tkinter GUI frontend
 ├── requirements.txt
-└── Readme.md
+├── README.md
+└── .gitignore
 ```
 
----
+| File | Purpose |
+|---|---|
+| `crypto_core.py` | Cryptographic operations |
+| `file_operations.py` | File encryption/decryption logic |
+| `vault.py` | Command-line interface |
+| `gui.py` | Tkinter graphical interface |
+| `tests/test_crypto.py` | Automated cryptographic tests |
 
-## Installation
+The CLI and GUI both use the same backend encryption functions.
 
-Clone the repository:
+## Requirements
 
-```bash
-git clone <repository-url>
-cd Vault
-```
-
-Create a virtual environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate it.
-
-### Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-### Linux/macOS
-
-```bash
-source .venv/bin/activate
-```
+- Python 3.10+
+- `cryptography`
+- `pytest` for testing
 
 Install dependencies:
 
@@ -79,335 +77,227 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Note: Tkinter is required for the GUI. On Windows, Tkinter is usually included with Python. On Debian/Ubuntu:
+## Running the CLI
 
 ```bash
-sudo apt install python3-tk
+python vault.py
 ```
 
----
+For available options:
 
-## Usage
+```bash
+python vault.py --help
+```
 
-### Run the GUI
+The CLI supports encryption, decryption, password confirmation, overwrite control, and optional deletion of the original file.
+
+## Running the GUI
 
 ```bash
 python gui.py
 ```
 
-GUI highlights:
-- File browser to select input file
-- Password and confirm password fields (masked)
-- Overwrite and "delete original after success" checkboxes
-- Separate Encrypt and Decrypt buttons
-- Status label and dialog popups for success/errors
+The GUI provides file selection, password input, encryption, decryption, overwrite control, delete-original control, status messages, and error handling.
 
-The GUI calls file_operations.encrypt_file / decrypt_file and uses the same backend as the CLI.
+## Security Design
 
-### CLI: Encrypt a file
+### AES-256-GCM
 
-```bash
-python vault.py encrypt Sample_Files/example.pdf
+Vault uses AES-GCM with a 256-bit key.
+
+AES-GCM provides:
+
+- **Confidentiality** — the original file contents cannot be read without the key.
+- **Integrity/authentication** — unauthorized modifications are detected during decryption.
+
+### Scrypt
+
+Passwords are not used directly as AES keys. Vault uses Scrypt to derive a 256-bit key.
+
+Current parameters:
+
+```text
+N = 2^14
+r = 8
+p = 1
 ```
 
-### CLI: Decrypt a file
+Each encrypted file receives its own random salt.
 
-```bash
-python vault.py decrypt Encrypted_Files/example.pdf.enc
-```
+### Random Nonces
 
-### Overwrite existing output (CLI)
+A fresh 12-byte nonce is generated for every encryption operation. Nonce reuse with AES-GCM must be avoided.
 
-```bash
-python vault.py encrypt file.txt --overwrite
-```
+## Error Handling
 
-### Delete original file after successful encryption (CLI)
+Vault handles common failure cases including:
 
-```bash
-python vault.py encrypt file.txt --delete-original
-```
+- Missing files
+- Existing output files
+- Incorrect passwords
+- Tampered encrypted files
+- Invalid encrypted file data
+- Permission and filesystem errors
 
----
-
-## Encryption Process
-
-For every encryption:
-
-1. A random 16-byte salt is generated.
-2. A 256-bit encryption key is derived from the user's password using Scrypt.
-3. A random 12-byte nonce is generated.
-4. AES-256-GCM encrypts the file.
-5. The encrypted file stores:
-
-```
-+----------------+----------------+---------------------------+
-| Salt (16 B)    | Nonce (12 B)   | Ciphertext + Auth Tag     |
-+----------------+----------------+---------------------------+
-```
-
-The authentication tag is produced by AES-GCM and stored with the ciphertext.
-
----
-
-## Security Features
-
-- Unique encryption key for every password/salt combination
-- Random nonce for every encryption
-- Authenticated encryption prevents undetected tampering
-- Wrong passwords are rejected
-- Corrupted or modified encrypted files are rejected
-- Passwords are never stored
-
----
+An incorrect password or modified ciphertext results in authentication failure.
 
 ## Testing
+
+Tests are located in:
+
+```text
+tests/test_crypto.py
+```
 
 Run the test suite:
 
 ```bash
-python -m pytest -v
+python -m pytest
 ```
 
-Tests include:
-- Round-trip encryption and decryption
-- Wrong password detection
+Current tests cover:
+
+- Successful encryption/decryption round trip
+- Incorrect password detection
 - Tampered ciphertext detection
-- Empty plaintext
-- Binary data round-trips
 
----
+## Building the Windows Executable
 
-## Technologies Used
+Install PyInstaller:
 
-- Python 3
-- cryptography
-- argparse
-- getpass
-- tkinter (GUI)
-- pytest
-
----
-
-## Future Improvements
-
-- CI (GitHub Actions)
-- Code formatting with Black
-- Linting with Ruff
-- Streaming encryption for large files
-- Progress indicator in GUI
-- Configurable output directory
-- Package distribution via PyPI
-
----
-
-## License
-
-This project is intended for educational purposes and cybersecurity learning.
-```// filepath: c:\Users\pawan\Documents\Projects\File Encryption\Readme.md
-// ...existing code...
-# Vault
-
-A secure file encryption tool built in Python using **AES-256-GCM** for authenticated encryption and **Scrypt** for password-based key derivation.
-
-Vault encrypts and decrypts files while ensuring both confidentiality and integrity. Every encrypted file is protected with a unique salt and nonce, making each encryption operation cryptographically secure. This project now provides both a CLI and a simple GUI (tkinter).
-
----
-
-## Features
-
-- AES-256-GCM authenticated encryption
-- Password-based key derivation using Scrypt
-- Random salt generated for every encrypted file
-- Random nonce generated for every encryption
-- Secure password input using `getpass` (CLI) and masked entry with confirmation (GUI)
-- Password confirmation enforced in GUI before encryption
-- Detects incorrect passwords
-- Detects tampered or corrupted encrypted files
-- Overwrite protection
-- Option to delete the original file after encryption/decryption
-- Unit tests using pytest
-
----
-
-## Project Structure
-
-```
-Vault/
-│
-├── Encrypted_Files/
-├── Decrypted_Files/
-├── Sample_Files/
-├── tests/
-│   └── test_crypto.py
-│
-├── crypto_core.py
-├── file_operations.py
-├── vault.py        # CLI entrypoint
-├── gui.py          # Simple tkinter GUI frontend
-├── requirements.txt
-└── Readme.md
+```bash
+pip install pyinstaller
 ```
 
----
+Build the executable:
 
-## Installation
+```bash
+pyinstaller --onefile --windowed --name Vault gui.py
+```
 
-Clone the repository:
+The executable will be generated at:
+
+```text
+dist/Vault.exe
+```
+
+## GitHub Releases
+
+The Windows executable is best distributed through **GitHub Releases** rather than committed directly to the source repository.
+
+A release can contain:
+
+```text
+Vault-Windows-x64.exe
+```
+
+while the repository contains the source code and project files.
+
+Example workflow:
+
+1. Create a Git tag such as `v1.0.0`.
+2. Create a GitHub Release from that tag.
+3. Attach the Windows executable.
+4. Add release notes.
+
+## Development Workflow
 
 ```bash
 git clone <repository-url>
 cd Vault
-```
 
-Create a virtual environment:
-
-```bash
 python -m venv .venv
-```
-
-Activate it.
-
-### Windows
-
-```bash
 .venv\Scripts\activate
-```
 
-### Linux/macOS
-
-```bash
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
 pip install -r requirements.txt
 ```
 
-Note: Tkinter is required for the GUI. On Windows, Tkinter is usually included with Python. On Debian/Ubuntu:
+Run tests:
 
 ```bash
-sudo apt install python3-tk
+python -m pytest
 ```
 
----
-
-## Usage
-
-### Run the GUI
+Run the GUI:
 
 ```bash
 python gui.py
 ```
 
-GUI highlights:
-- File browser to select input file
-- Password and confirm password fields (masked)
-- Overwrite and "delete original after success" checkboxes
-- Separate Encrypt and Decrypt buttons
-- Status label and dialog popups for success/errors
-
-The GUI calls file_operations.encrypt_file / decrypt_file and uses the same backend as the CLI.
-
-### CLI: Encrypt a file
+Run the CLI:
 
 ```bash
-python vault.py encrypt Sample_Files/example.pdf
+python vault.py
 ```
 
-### CLI: Decrypt a file
+## Design Philosophy
 
-```bash
-python vault.py decrypt Encrypted_Files/example.pdf.enc
+Vault demonstrates how a small security-focused application can be separated into layers:
+
+```text
+             ┌─────────────────┐
+             │       GUI       │
+             │     gui.py      │
+             └────────┬────────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │ File Operations │
+             │file_operations.py│
+             └────────┬────────┘
+                      │
+                      ▼
+             ┌─────────────────┐
+             │ Cryptographic   │
+             │     Core        │
+             │ crypto_core.py  │
+             └─────────────────┘
+
+             ┌─────────────────┐
+             │       CLI       │
+             │    vault.py     │
+             └────────┬────────┘
+                      │
+                      └──────────► File Operations
 ```
 
-### Overwrite existing output (CLI)
+The cryptographic implementation is kept separate from the user interfaces so that both the CLI and GUI use the same encryption backend.
 
-```bash
-python vault.py encrypt file.txt --overwrite
-```
+## Limitations
 
-### Delete original file after successful encryption (CLI)
+Vault is primarily an educational and portfolio project and has not undergone an independent security audit.
 
-```bash
-python vault.py encrypt file.txt --delete-original
-```
+Important considerations:
 
----
-
-## Encryption Process
-
-For every encryption:
-
-1. A random 16-byte salt is generated.
-2. A 256-bit encryption key is derived from the user's password using Scrypt.
-3. A random 12-byte nonce is generated.
-4. AES-256-GCM encrypts the file.
-5. The encrypted file stores:
-
-```
-+----------------+----------------+---------------------------+
-| Salt (16 B)    | Nonce (12 B)   | Ciphertext + Auth Tag     |
-+----------------+----------------+---------------------------+
-```
-
-The authentication tag is produced by AES-GCM and stored with the ciphertext.
-
----
-
-## Security Features
-
-- Unique encryption key for every password/salt combination
-- Random nonce for every encryption
-- Authenticated encryption prevents undetected tampering
-- Wrong passwords are rejected
-- Corrupted or modified encrypted files are rejected
-- Passwords are never stored
-
----
-
-## Testing
-
-Run the test suite:
-
-```bash
-python -m pytest -v
-```
-
-Tests include:
-- Round-trip encryption and decryption
-- Wrong password detection
-- Tampered ciphertext detection
-- Empty plaintext
-- Binary data round-trips
-
----
-
-## Technologies Used
-
-- Python 3
-- cryptography
-- argparse
-- getpass
-- tkinter (GUI)
-- pytest
-
----
+- Password strength directly affects security.
+- The current Scrypt parameters may not suit every threat model.
+- File metadata such as filenames and filesystem timestamps may remain exposed.
+- Deleting an original file does not guarantee secure erasure from storage.
+- For highly sensitive data, professionally audited encryption software should be preferred.
 
 ## Future Improvements
 
-- CI (GitHub Actions)
-- Code formatting with Black
-- Linting with Ruff
-- Streaming encryption for large files
-- Progress indicator in GUI
-- Configurable output directory
-- Package distribution via PyPI
+Potential improvements include:
 
----
+- Stronger/configurable Scrypt parameters
+- Password strength estimation
+- Drag-and-drop file support
+- Directory encryption
+- Progress indicators for large files
+- Secure temporary-file handling
+- Custom application icon and metadata
+- Automated Windows builds using GitHub Actions
+- More extensive test coverage
+- Support for additional platforms
 
 ## License
 
-This project is intended for educational purposes and cybersecurity learning.
+This project can be distributed under the license specified in the repository.
+
+If the repository uses the MIT License, see the `LICENSE` file for the complete license text.
+
+## Author
+
+**Pawan Manigandan**
+
+Mechanical Engineering undergraduate interested in software engineering, cybersecurity, computational engineering, photography, and filmmaking.
